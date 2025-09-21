@@ -1,4 +1,7 @@
-function [f_val,J] = test_func1(X)
+[f_val, J] = test_func_1([1, 2, 3]);
+disp([1, 2, 3] - (J\f_val).')
+
+function [f_val,J] = test_func_1(X)
     f1 = X(1)^2 + X(2)^2 - X(3)^5 -6;
     f2 = X(1)*X(3) + X(2) - 12;
     f3 = sin(X(1) + X(2) + X(3));
