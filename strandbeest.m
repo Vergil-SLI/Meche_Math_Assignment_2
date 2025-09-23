@@ -32,11 +32,26 @@ leg_params.link_lengths = ...
         65.7,... %link 9 length
         49.0 ... %link 10 length
         ];
+%length of crank shaft
+leg_params.crank_length = 15.0;
+%fixed position coords of vertex 0
+leg_params.vertex_pos0 = [0;0];
+%fixed position coords of vertex 2
+leg_params.vertex_pos2 = [-38.0;-7.8];
+
+
 num_vertices = leg_params.num_vertices;
 
-vertex_coords = zeros(num_vertices*2,1);
+vertex_coords = %WRITE THE THING HERE;
 
 length_errors = link_length_error_func(vertex_coords, leg_params);
+
+end
+
+function coords_out = column_to_matrix(vertex_coords)
+
+num_coords = length(vertex_coords);
+coords_out = [vertex_coords(1:2:(num_coords-1)),vertex_coords(2:2:num_coords)];
 
 end
 
@@ -63,7 +78,7 @@ function length_errors = link_length_error_func(vertex_coords, leg_params)
     link_to_vertex_list = leg_params.link_to_vertex_list;
     link_lengths = leg_params.link_lengths;
 
-    F = zeros(length(leg_params.num_linkages),4);
+    length_errors = zeros(length(leg_params.num_linkages),4);
 
     for i = 1:leg_params.num_linkages
         vertex_call = link_to_vertex_list(i,:);
@@ -71,6 +86,8 @@ function length_errors = link_length_error_func(vertex_coords, leg_params)
         B = vertex_coords(vertex_call(2));
         fi = (A(1)-B(1))^2 - (A(2)-B(2))^2 - link_lengths(i);
 
-        F(i,:) = fi; 
+        length_errors(i,:) = fi; 
     end
+
+    disp(length_errors)
 end
