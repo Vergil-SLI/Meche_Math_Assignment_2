@@ -19,86 +19,80 @@ function [xi, exit_flag] = multi_newton(fun,x_guess,solver_params)
     if isfield(solver_params,'numerical_diff')
         numerical_diff = solver_params.numerical_diff; 
     end
-
-    % numerical_diff = 0 -> fun is assumed to return [fval,J]
+    
+    % ACTUAL NEWTON FUNCTION CODE
     max_iter = 250;
     iter = 1;
+    xi_prev = x_guess;
     
-    
+    xi = x_guess;
+    % calculate your first 2 inital points (second one needed to see if
+    % change in x is already too small)
     if numerical_diff == 0
-        xi = x_guess;
-        [fx, J] = fun(xi);
-
-        if round(det(J * J.'), 15) ~= 0
-            xi_new = xi - (J\fx).';
-            while iter < max_iter && norm(xi_new - xi) > dxtol && norm(fx) > ftol && norm(xi_new - xi) < dxmax && round(det(J * J.'), 15) ~= 0
-                xi = xi_new;
-                [fx, J] = fun(xi);
-                if(round(det(J * J.'), 6) ~= 0)
-                    xi_new = xi - (J\fx).';
-                end
-    
-                iter = iter + 1;
-            end
-        else
-            iter = max_iter;
-        end
-
-        
-
-        if norm(fx) < ftol
-            exit_flag = 0; % success
-        else
-            exit_flag = 1; % fail
-        end
-    
+        [fx, J] = fun(xi_prev);
     else
-        % numerical_diff = 1 -> fun is assumed to only return fval        
-        xi = x_guess;
-        fx = fun(xi);
-        J = approximate_jacobian(fun, xi);
-        if(round(det(J * J.'), 15) ~= 0)
-            xi_new = xi - (J\fx).';       
-            while iter < max_iter && norm(xi_new - xi) > dxtol && norm(fx) > ftol && norm(xi_new - xi) < dxmax && round(det(J * J.'), 15) ~= 0
-                xi = xi_new;
-                fx = fun(xi)
-                J = approximate_jacobian(fun, xi);
-                if(round(det(J * J.'), 6) ~= 0)
-                    xi_new = xi - (J\fx).';
-                end
-    
-                iter = iter + 1;
-            end
-        end
-
-
-        norm(fx)
-        if norm(fx) < ftol
-            exit_flag = 0; % success
-        elseif iter > max_iter
-            exit_flag = "too many iterations";
-        elseif norm(xi_new - xi) < dxtol
-            exit_flag = "too small of a change in x";
-        elseif norm(xi_new - xi) > dxmax
-            exit_flag = "too big of a change in x";
-        elseif round(det(J * J.'), 15) == 0
-            exit_flag = "determinant is 0";
-        end
-
+        fx = fun(xi_prev);
+        J = approximate_jacobian_for_newton(fun, xi_prev);
     end
-
-    % NUMERICAL APPROX
-    function J = approximate_jacobian(fun,x)
-        J = [];
-        h = 1e-6;
     
-        for j = 1:length(x)
-            basis_j = zeros(length(x), 1);
-            basis_j(j) = 1;
-            column = (fun(x + h*basis_j) - fun(x - h*basis_j)) / (2*h);
-            J = [J column];
-        end
+    delta_x = -J\fx;
+    
+    if det(J * J.') ~= 0
+        xi = xi_prev - J\fx;
+    else
+        xi = xi_prev + ftol*10; % here so program doesn't error
     end
+    
+    % keep finding "next point" until either change too small, too many
+    % iter, or find the root
+    while iter < max_iter && norm(xi - xi_prev) > dxtol && norm(fx) > ftol && norm(xi - xi_prev) < dxmax && det(J * J.') ~= 0
+        xi_prev = xi;
+        
+        if numerical_diff == 0
+            [fx, J] = fun(xi);
+        else
+            fx = fun(xi);
+            J = approximate_jacobian_for_newton(fun, xi);
+        end
+
+        if det(J * J.') ~= 0
+            xi = xi - J\fx;
+        end
+        
+        iter = iter + 1;
+    end
+    
+    distance_from_zero = norm(fx)
+    
+    % different exit flags
+    if iter == max_iter
+        exit_flag = "too many iterations";
+    elseif norm(xi - xi_prev) < dxtol && norm(fx) < 100*ftol
+        exit_flag = "close enough to success";
+    elseif norm(xi - xi_prev) > dxmax
+        exit_flag = "too big of a change in x";
+    elseif det(J * J.') == 0
+        exit_flag = "determinant is 0";
+    elseif norm(fx) < ftol    
+        exit_flag = "success"; % yippee
+    else
+        exit_flag = 'termination occured for another reason... how';
+    end
+    
+
 end
 
 
+
+% Numerical Approximation of the Jacobian
+function J = approximate_jacobian_for_newton(fun,x)
+    J = [];
+    h = 1e-6;
+
+    for j = 1:length(x)
+        basis_j = zeros(length(x), 1);
+        basis_j(j) = 1;
+        column = (fun(x + h*basis_j) - fun(x - h*basis_j)) / (2*h);
+        J = [J, column];
+    end
+end
