@@ -23,56 +23,44 @@ function [xi, exit_flag] = multi_newton(fun,x_guess,solver_params)
     % ACTUAL NEWTON FUNCTION CODE
     max_iter = 250;
     iter = 1;
-    xi_prev = x_guess;
-    
     xi = x_guess;
+    
     % calculate your first 2 inital points (second one needed to see if
     % change in x is already too small)
-    if numerical_diff == 0
-        [fx, J] = fun(xi_prev);
+    if numerical_diff ~= 1
+        [fx, J] = fun(xi);
     else
-        fx = fun(xi_prev);
-        J = approximate_jacobian_for_newton(fun, xi_prev);
+        fx = fun(xi);
+        J = approximate_jacobian_for_newton(fun, xi);
     end
     
     delta_x = -J\fx;
     
-    if det(J * J.') ~= 0
-        xi = xi_prev - J\fx;
-    else
-        xi = xi_prev + ftol*10; % here so program doesn't error
-    end
-    
-    % keep finding "next point" until either change too small, too many
-    % iter, or find the root
-    while iter < max_iter && norm(xi - xi_prev) > dxtol && norm(fx) > ftol && norm(xi - xi_prev) < dxmax && det(J * J.') ~= 0
-        xi_prev = xi;
+    % keep finding "next point" until either change too small, too many iter, or find the root
+    while iter < max_iter && norm(delta_x) >= dxtol && norm(fx) >= ftol && norm(delta_x) <= dxmax
+        xi = xi + delta_x;
         
-        if numerical_diff == 0
+        if numerical_diff ~= 1
             [fx, J] = fun(xi);
         else
             fx = fun(xi);
             J = approximate_jacobian_for_newton(fun, xi);
         end
-
-        if det(J * J.') ~= 0
-            xi = xi - J\fx;
-        end
         
+        delta_x = -J\fx;
         iter = iter + 1;
     end
     
     distance_from_zero = norm(fx)
+    % delta_x = delta_x
     
-    % different exit flags
-    if iter == max_iter
+    % different exit flags, not the most trustworthy
+    if iter >= max_iter
         exit_flag = "too many iterations";
-    elseif norm(xi - xi_prev) < dxtol && norm(fx) < 100*ftol
-        exit_flag = "close enough to success";
-    elseif norm(xi - xi_prev) > dxmax
+    elseif norm(delta_x) < dxtol 
+        exit_flag = "too small of a change in x";
+    elseif norm(delta_x) > dxmax
         exit_flag = "too big of a change in x";
-    elseif det(J * J.') == 0
-        exit_flag = "determinant is 0";
     elseif norm(fx) < ftol    
         exit_flag = "success"; % yippee
     else
