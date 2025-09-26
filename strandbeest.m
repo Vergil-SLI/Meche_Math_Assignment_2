@@ -49,10 +49,11 @@ function strandbeest()
     ];
     
     theta = 0;
+    leg_drawing = initialize_leg_drawing(leg_params);
     
     % linkage_error_func(guess, leg_params, theta)
-    [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta)
-
+    [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta);
+    update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
 end
 
 
@@ -122,13 +123,7 @@ function [vertex_coords_root, exit_flag] = compute_coords(vertex_coords_guess, l
     [vertex_coords_root, exit_flag] = multi_newton(strandbeest_error,guess,solver_params);
 end
 
-%% EVERYTHING UNDERNEATH I HAVE NOT DONE, WILL DO TMR
-%leg_drawing: a struct containing all the plotting objects for the linkage
-% leg_drawing.linkages is a cell array, where each element corresponds
-% to a plot of a single link (excluding the crank)
-% leg_drawing.crank is a plot of the crank link
-% leg_drawing.vertices is a cell array, where each element corresponds
-% to a plot of one of the vertices in the linkage
+% Plots the linkage or vertex of leg depending on what you what ig
 function leg_drawing = initialize_leg_drawing(leg_params)
     leg_drawing = struct();
     leg_drawing.linkages = cell(leg_params.num_linkages,1);
@@ -147,42 +142,31 @@ function leg_drawing = initialize_leg_drawing(leg_params)
 end
 
 
-%Updates the plot objects that visualize the leg linkage
-%for the current leg configuration
-%INPUTS:
-%vertex_coords_root: a column vector containing the (x,y) coordinates of every vertex
-%leg_drawing: a struct containing all the plotting objects for the linkage
-% leg_drawing.linkages is a cell array, where each element corresponds
-% to a plot of a single link (excluding the crank)
-% leg_drawing.crank is a plot of the crank link
-% leg_drawing.vertices is a cell array, where each element corresponds
-% to a plot of one of the vertices in the linkage
-% function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
-%     %iterate through each link, and update corresponding link plot
-%     for linkage_index = 1:leg_params.num_linkages
-%         %linkage_index is the label of the current link
-%         %your code here
-%         %line_x and line_y should both be two element arrays containing
-%         %the x and y coordinates of the line segment describing the current link
-%         line_x = %your code here
-%         line_y = %your code here
-%         set(leg_drawing.linkages{linkage_index},'xdata',line_x,'ydata',line_y);
-%     end
-%     %iterate through each vertex, and update corresponding vertex plot
-%     for vertex_index = 1:leg_params.num_vertices
-%         %vertex_index is the label of the current vertex
-%         %your code here
-%         %dot_x and dot_y should both be scalars
-%         %specifically the x and y coordinates of the corresponding vertex
-%         dot_x = %your code here
-%         dot_y = %your code here
-%         set(leg_drawing.vertices{vertex_index},'xdata',dot_x,'ydata',dot_y);
-%     end
-% 
-%     %your code here
-%     %crank_x and crank_y should both be two element arrays
-%     %containing the x and y coordinates of the line segment describing the crank
-%     crank_x = %your code here
-%     crank_y = %your code here
-%     set(leg_drawing.crank,'xdata',crank_x,'ydata',crank_y);
-% end
+%Plots leg given coordinates yay
+function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
+    axis equal
+
+    %iterate through each link, and plot each link
+    for linkage_index = 1:leg_params.num_linkages
+        %put the x & y coordinates of both ends of the link in line_x and y
+        vertices = leg_params.link_to_vertex_list(linkage_index, :);
+        line_x = [complete_vertex_coords(vertices(1)*2 - 1), complete_vertex_coords(vertices(2)*2 - 1)];
+        line_y = [complete_vertex_coords(vertices(1)*2), complete_vertex_coords(vertices(2)*2)];
+        set(leg_drawing.linkages{linkage_index},'xdata',line_x,'ydata',line_y);
+    end
+
+    %iterate through each vertex, and plot each vertex
+    for vertex_index = 1:leg_params.num_vertices
+        %put the x & y coordinates of the vertex into dot_x and y
+        dot_x = complete_vertex_coords(vertex_index*2 - 1);
+        dot_y = complete_vertex_coords(vertex_index*2);
+        set(leg_drawing.vertices{vertex_index},'xdata',dot_x,'ydata',dot_y);
+    end
+
+    %your code here
+    %crank_x and crank_y should both be two element arrays
+    %containing the x and y coordinates of the line segment describing the crank
+    crank_x = [leg_params.vertex_pos0(1,:), complete_vertex_coords(1)]; 
+    crank_y = [leg_params.vertex_pos0(2,:), complete_vertex_coords(2)];
+    set(leg_drawing.crank,'xdata',crank_x,'ydata',crank_y);
+end
