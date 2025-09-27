@@ -183,28 +183,38 @@ function video_example(leg_params,vertex_guess_coords,theta)
     % open(writerObj);
     
     leg_drawing = initialize_leg_drawing(leg_params);
+    x7 = [];
+    y7 = [];
 
     %iterate through theta
     for theta_iter = 1:length(theta)
         
         [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta(theta_iter));
+        x7 = [x7; vertex_coords_root(13)];
+        y7 = [y7; vertex_coords_root(14)];
         vertex_guess_coords = vertex_coords_root;
         update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
         drawnow;
     end
-    
-    
-    % while t < t_wall && t < t_ground
-    %     [newx, newy, newtheta] = egg_trajectory(t);
-    % 
-    %     [newv, ~] = egg_func(s, newx, newy, newtheta, egg_parms);
-    % 
-    %     set(og, "xdata", newv(1, :), "ydata", newv(2, :));
-    % 
-    % 
-    % 
-    %     t = t + 0.001;
-    % end
 
+
+% Finite Differences Calc
+    dx7 = [];
+    dy7 = [];
+
+    for i = 1:length(x7)-1
+        dx = x7(i+1)-x7(i);
+        dy = y7(i+1)-y7(i);
+
+        dx7 = [dx7; dx];
+        dy7 = [dy7; dy];
+    end
+    hold off;
+    plot(theta(1:length(theta)-1),dx7)
+    hold on;
+    plot(theta(1:length(theta)-1),dy7)
+    legend('x points finite','y points finite')
+    title('dx/dtheta comparison')
+  
 
 end
