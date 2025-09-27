@@ -49,11 +49,9 @@ function strandbeest()
     ];
     
     theta = 0;
-    leg_drawing = initialize_leg_drawing(leg_params);
-    
-    % linkage_error_func(guess, leg_params, theta)
-    [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta);
-    update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
+    theta = linspace(0,(2*pi),60);
+
+    [~, ~] = video_example(leg_params,vertex_guess_coords,theta);
 end
 
 
@@ -89,11 +87,7 @@ function coord_errors = fixed_coord_error_func(vertex_coords, leg_params, theta)
     vertex_2x_bar = leg_params.vertex_pos0(1) + leg_params.vertex_pos2(1);
     vertex_2y_bar = leg_params.vertex_pos0(2) + leg_params.vertex_pos2(2);
 
-    coord_errors = [
-        vertex_1x - vertex_1x_bar;...
-        vertex_1y - vertex_1y_bar;...
-        vertex_2x - vertex_2x_bar;...
-        vertex_2y - vertex_2y_bar];
+    coord_errors = [vertex_1x - vertex_1x_bar; vertex_1y - vertex_1y_bar;vertex_2x - vertex_2x_bar;vertex_2y - vertex_2y_bar];
 end
 
 
@@ -129,10 +123,10 @@ function leg_drawing = initialize_leg_drawing(leg_params)
     leg_drawing.linkages = cell(leg_params.num_linkages,1);
     
     for linkage_index = 1:leg_params.num_linkages
-        leg_drawing.linkages{linkage_index} = line([0,0],[0,0],'color','k','linewidth',2);
+        leg_drawing.linkages{linkage_index} = line([0,0],[0,0],'color','b','linewidth',2);
     end
     
-    leg_drawing.crank = line([0,0],[0,0],'color','k','linewidth',1.5);
+    leg_drawing.crank = line([0,0],[0,0],'color','b','linewidth',1.5);
     leg_drawing.vertices = cell(leg_params.num_vertices,1);
     
     for vertex_index = 1:leg_params.num_vertices
@@ -169,4 +163,44 @@ function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
     crank_x = [leg_params.vertex_pos0(1,:), complete_vertex_coords(1)]; 
     crank_y = [leg_params.vertex_pos0(2,:), complete_vertex_coords(2)];
     set(leg_drawing.crank,'xdata',crank_x,'ydata',crank_y);
+end
+
+%Making the video
+function [leg_drawing, vertex_coords_root] = video_example(leg_params,vertex_guess_coords,theta)
+
+    % %define location and filename where video will be stored
+    % %written a bit weird to make it fit when viewed in assignment
+    % mypath1 = %insert value
+    % mypath2 = %insert here
+    % fname='leg_animation.avi';
+    % input_fname = [mypath1,mypath2,fname];
+    % 
+    % %create a videowriter, which will write frames to the animation file
+    % writerObj = VideoWriter(input_fname);
+    % %must call open before writing any frames
+    % open(writerObj);
+    
+    leg_drawing = initialize_leg_drawing(leg_params);
+    
+    % linkage_error_func(guess, leg_params, theta)
+    [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta);
+    update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
+
+    %iterate through theta
+    for theta_iter = 0:length(theta)
+
+        leg_drawing = initialize_leg_drawing(leg_params);
+        
+        % linkage_error_func(guess, leg_params, theta)
+        [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta);
+        update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
+
+        coord_errors = fixed_coord_error_func(vertex_coords, leg_params, theta_iter);
+        error_vec = linkage_error_func(vertex_coords, leg_params, theta_iter);
+        [vertex_coords_root, ~] = compute_coords(vertex_coords_guess, leg_params, theta_iter);
+
+        update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
+        
+    end
+
 end
