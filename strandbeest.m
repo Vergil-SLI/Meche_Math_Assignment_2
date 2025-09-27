@@ -112,14 +112,14 @@ end
 
 
 function [vertex_coords_root, exit_flag] = compute_coords(vertex_coords_guess, leg_params, theta)
-    % just find a config of vertices that fits the length bro
+    % using multi-newton to finally solve for them coordinates
     solver_params = struct();
     strandbeest_error = @(v) linkage_error_func(v, leg_params, theta);
 
     [vertex_coords_root, exit_flag] = multi_newton(strandbeest_error,vertex_coords_guess,solver_params);
 end
 
-% Plots the linkage or vertex of leg depending on what you what ig
+% Plots the linkage or vertex of leg depending on what you want ig
 function leg_drawing = initialize_leg_drawing(leg_params)
     leg_drawing = struct();
     leg_drawing.linkages = cell(leg_params.num_linkages,1);
@@ -160,7 +160,6 @@ function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
         set(leg_drawing.vertices{vertex_index},'xdata',dot_x,'ydata',dot_y);
     end
 
-    %your code here
     %crank_x and crank_y should both be two element arrays
     %containing the x and y coordinates of the line segment describing the crank
     crank_x = [leg_params.vertex_pos0(1,:), complete_vertex_coords(1)]; 
@@ -168,42 +167,34 @@ function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
     set(leg_drawing.crank,'xdata',crank_x,'ydata',crank_y);
 end
 
+
 %Making the video
 function video_example(leg_params,vertex_guess_coords,theta)
-
-    % %define location and filename where video will be stored
-    % %written a bit weird to make it fit when viewed in assignment
-    % mypath1 = %insert value
-    % mypath2 = %insert here
-    % fname='leg_animation.avi';
-    % input_fname = [mypath1,mypath2,fname];
-    % 
-    % %create a videowriter, which will write frames to the animation file
-    % writerObj = VideoWriter(input_fname);
-    % %must call open before writing any frames
-    % open(writerObj);
-    
     leg_drawing = initialize_leg_drawing(leg_params);
+    
+    % variables needed for Finite Diff and Linear Algebra velocity calc
     x7 = [];
     y7 = [];
     big_dVdtheta = [];
 
     %iterate through theta
-    for theta_iter = 1:length(theta)
-        
+    for theta_iter = 1:length(theta)     
+        % calculate vertex coords for current theta and plot it 
         [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta(theta_iter));
-        x7 = [x7; vertex_coords_root(13)];
-        y7 = [y7; vertex_coords_root(14)];
         vertex_guess_coords = vertex_coords_root;
         update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
         drawnow;
 
+        % Finite diff data collection
+        x7 = [x7; vertex_coords_root(13)];
+        y7 = [y7; vertex_coords_root(14)];
+        
+        % Linear Algebra data collection
         dVdtheta = compute_velocities(vertex_coords_root, leg_params, theta(theta_iter));
         big_dVdtheta = [big_dVdtheta; dVdtheta];
     end
 
     big_dVdtheta
-
 
 % Finite Differences Calc
     dx7 = [];
@@ -244,7 +235,6 @@ function dVdtheta = compute_velocities(vertex_coords, leg_params, theta)
     B(2,:) = leg_params.crank_length * cos(theta);
 
     dVdtheta = B\M;
-  
 end
 
 function J = approximate_jacobian(fun,x)
