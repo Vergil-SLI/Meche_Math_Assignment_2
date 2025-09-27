@@ -60,9 +60,10 @@ function strandbeest()
     end
 
     theta = linspace(0,(6*pi),100);
-    % [vertex_coords_root, exit_flag] = compute_coords(guess, leg_params, theta(1))
+    [vertex_coords_root, ~] = compute_coords(guess, leg_params, theta(1));
 
     video_example(leg_params,guess,theta);
+    dVdtheta = compute_velocities(vertex_coords_root, leg_params, pi/4);
 end
 
 
@@ -185,6 +186,7 @@ function video_example(leg_params,vertex_guess_coords,theta)
     leg_drawing = initialize_leg_drawing(leg_params);
     x7 = [];
     y7 = [];
+    big_dVdtheta = [];
 
     %iterate through theta
     for theta_iter = 1:length(theta)
@@ -195,7 +197,12 @@ function video_example(leg_params,vertex_guess_coords,theta)
         vertex_guess_coords = vertex_coords_root;
         update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
         drawnow;
+
+        dVdtheta = compute_velocities(vertex_coords_root, leg_params, theta(theta_iter));
+        big_dVdtheta = [big_dVdtheta; dVdtheta];
     end
+
+    big_dVdtheta
 
 
 % Finite Differences Calc
@@ -215,6 +222,39 @@ function video_example(leg_params,vertex_guess_coords,theta)
     plot(theta(1:length(theta)-1),dy7)
     legend('x points finite','y points finite')
     title('dx/dtheta comparison')
-  
+ 
+end
 
+%Computes the theta derivatives of each vertex coordinate for the Jansen linkage
+%INPUTS:
+%vertex_coords: a column vector containing the (x,y) coordinates of every vertex
+% these are assumed to be legal values that are roots of the error funcs!
+%leg_params: a struct containing the parameters that describe the linkage
+%theta: the current angle of the crank
+%OUTPUTS:
+%dVdtheta: a column vector containing the theta derivates of each vertex coord
+function dVdtheta = compute_velocities(vertex_coords, leg_params, theta)
+    wrapper = @(v) link_length_error(v,leg_params);
+    Jacob_error_func = approximate_jacobian(wrapper,vertex_coords);
+    
+    add = eye(4,14);
+    M = [add; Jacob_error_func];
+    B = zeros(14,1);
+    B(1,:) = leg_params.crank_length * -sin(theta);
+    B(2,:) = leg_params.crank_length * cos(theta);
+
+    dVdtheta = B\M;
+  
+end
+
+function J = approximate_jacobian(fun,x)
+    J = [];
+    h = 1e-6;
+
+    for j = 1:length(x)
+        basis_j = zeros(length(x), 1);
+        basis_j(j) = 1;
+        column = (fun(x + h*basis_j) - fun(x - h*basis_j)) / (2*h);
+        J = [J, column];
+    end
 end

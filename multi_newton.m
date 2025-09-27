@@ -51,7 +51,7 @@ function [xi, exit_flag] = multi_newton(fun,x_guess,solver_params)
         iter = iter + 1;
     end
     
-    distance_from_zero = norm(fx)
+    distance_from_zero = norm(fx);
     % delta_x = delta_x
     
     % different exit flags, not the most trustworthy
