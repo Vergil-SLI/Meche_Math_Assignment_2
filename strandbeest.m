@@ -48,10 +48,21 @@ function strandbeest()
     [ -50; -100]... %vertex 7 guess
     ];
     
-    theta = 0;
-    theta = linspace(0,(2*pi),60);
+    % concatenate initial guesses into a vertical column
+    [numRows, numCols] = size(vertex_guess_coords);
+    guess = zeros(numRows*numCols, 1);
+    tracker = 1;
+    for i = 1:numRows
+        for j = 1:numCols
+            guess(tracker) = vertex_guess_coords(i, j);
+            tracker = tracker + 1;
+        end
+    end
 
-    [~, ~] = video_example(leg_params,vertex_guess_coords,theta);
+    theta = linspace(0,(6*pi),100);
+    % [vertex_coords_root, exit_flag] = compute_coords(guess, leg_params, theta(1))
+
+    video_example(leg_params,guess,theta);
 end
 
 
@@ -103,18 +114,8 @@ function [vertex_coords_root, exit_flag] = compute_coords(vertex_coords_guess, l
     % just find a config of vertices that fits the length bro
     solver_params = struct();
     strandbeest_error = @(v) linkage_error_func(v, leg_params, theta);
-    
-    [numRows, numCols] = size(vertex_coords_guess);
-    guess = zeros(numRows*numCols, 1);
-    tracker = 1;
-    for i = 1:numRows
-        for j = 1:numCols
-            guess(tracker) = vertex_coords_guess(i, j);
-            tracker = tracker + 1;
-        end
-    end
 
-    [vertex_coords_root, exit_flag] = multi_newton(strandbeest_error,guess,solver_params);
+    [vertex_coords_root, exit_flag] = multi_newton(strandbeest_error,vertex_coords_guess,solver_params);
 end
 
 % Plots the linkage or vertex of leg depending on what you what ig
@@ -139,6 +140,7 @@ end
 %Plots leg given coordinates yay
 function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
     axis equal
+    axis([-150 20 -120 50])
 
     %iterate through each link, and plot each link
     for linkage_index = 1:leg_params.num_linkages
@@ -166,7 +168,7 @@ function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
 end
 
 %Making the video
-function [leg_drawing, vertex_coords_root] = video_example(leg_params,vertex_guess_coords,theta)
+function video_example(leg_params,vertex_guess_coords,theta)
 
     % %define location and filename where video will be stored
     % %written a bit weird to make it fit when viewed in assignment
@@ -181,26 +183,28 @@ function [leg_drawing, vertex_coords_root] = video_example(leg_params,vertex_gue
     % open(writerObj);
     
     leg_drawing = initialize_leg_drawing(leg_params);
-    
-    % linkage_error_func(guess, leg_params, theta)
-    [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta);
-    update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
 
     %iterate through theta
-    for theta_iter = 0:length(theta)
-
-        leg_drawing = initialize_leg_drawing(leg_params);
+    for theta_iter = 1:length(theta)
         
-        % linkage_error_func(guess, leg_params, theta)
-        [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta);
+        [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta(theta_iter));
+        vertex_guess_coords = vertex_coords_root;
         update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
-
-        coord_errors = fixed_coord_error_func(vertex_coords, leg_params, theta_iter);
-        error_vec = linkage_error_func(vertex_coords, leg_params, theta_iter);
-        [vertex_coords_root, ~] = compute_coords(vertex_coords_guess, leg_params, theta_iter);
-
-        update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
-        
+        drawnow;
     end
+    
+    
+    % while t < t_wall && t < t_ground
+    %     [newx, newy, newtheta] = egg_trajectory(t);
+    % 
+    %     [newv, ~] = egg_func(s, newx, newy, newtheta, egg_parms);
+    % 
+    %     set(og, "xdata", newv(1, :), "ydata", newv(2, :));
+    % 
+    % 
+    % 
+    %     t = t + 0.001;
+    % end
+
 
 end
