@@ -1,4 +1,6 @@
 function strandbeest()
+    %clearing bc our stuff keeps breaking:
+    clear;
     %Set Parameters
     %initialize leg_params structure
     leg_params = struct();
@@ -211,20 +213,31 @@ function video_example(leg_params,vertex_guess_coords,theta)
         dy7 = [dy7; dy_dtheta];
     end
 
-    dv_y7 = dv_y7
-    dy7 = dy7
-
     figure();
-    plot(theta(1:length(theta)-1),dx7)
+    p_theta = linspace(0,(2*pi),100);
+    %Plot dxtip/dtheta
+    subplot(2,1,1);
+    plot(p_theta(1:length(p_theta)-1),dx7)
     hold on;
-    plot(theta(1:length(theta)-1),dy7)
-    title('d/dtheta comparison')
+    plot(p_theta(1:length(p_theta)),dv_x7)
+    title('dxtip/dtheta Comparison')
+    legend('Finite Differences', 'Linear Algebra')
+    xlabel('Theta')
+    ylabel('dxtip')
+    axis([0 (2*pi) -50 50])
+    hold off;
  
-    % Plot Linear Algebra 
-    plot(theta(1:length(theta)),dv_x7)
-    plot(theta(1:length(theta)),dv_y7)
-    legend('x points finite','y points finite', 'x points lin alg', 'y points lin alg')
-    hold off
+    % Plot dytip/dtheta
+    subplot(2,1,2);
+    plot(p_theta(1:length(p_theta)-1),dy7)
+    hold on;
+    plot(p_theta(1:length(p_theta)),dv_y7)
+    title('dytip/dtheta Comparison')
+    legend('Finite Differences', 'Linear Algebra')
+    xlabel('Theta')
+    ylabel('dytip')
+    axis([0 (2*pi) -50 50])
+    hold off;
     
 end
 
