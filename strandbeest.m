@@ -60,10 +60,11 @@ function strandbeest()
             tracker = tracker + 1;
         end
     end
+    
+    thetanum = 400;
+    theta = linspace(0,(6*pi),thetanum);
 
-    theta = linspace(0,(6*pi),100);
-
-    video_example(leg_params,guess,theta);
+    video_example(leg_params,guess,theta,thetanum);
     % dVdtheta = compute_velocities(vertex_coords_root, leg_params, pi/4)
 end
 
@@ -171,7 +172,7 @@ end
 
 
 %Making the video
-function video_example(leg_params,vertex_guess_coords,theta)
+function video_example(leg_params,vertex_guess_coords,theta,thetanum)
     leg_drawing = initialize_leg_drawing(leg_params);
     hold off;
    
@@ -181,6 +182,9 @@ function video_example(leg_params,vertex_guess_coords,theta)
     dv_x7 = [];
     dv_y7 = [];
     
+    hold on;
+    path_plot = plot(0,0,'g');
+    tangent_plot = plot(0,0,'r');
     %iterate through theta 
     for theta_iter = 1:length(theta)     
         % calculate vertex coords for current theta and plot it 
@@ -198,11 +202,11 @@ function video_example(leg_params,vertex_guess_coords,theta)
         dv_y7 = [dv_y7; dVdtheta(14)];
 
         update_leg_drawing(vertex_coords_root, leg_drawing, leg_params,theta,vertex_coords_root)
-        drawnow;
-        hold on;
-        plot(x7,y7,'g');
-        plot([vertex_coords_root(13), vertex_coords_root(13)+dVdtheta(13)],[vertex_coords_root(14),vertex_coords_root(14)+dVdtheta(14)],'r')
-        hold off;  
+        
+        set(path_plot,'xdata',x7,'ydata',y7)
+        set(tangent_plot,'xdata',[vertex_coords_root(13), vertex_coords_root(13)+dVdtheta(13)/2],...
+            'ydata',[vertex_coords_root(14),vertex_coords_root(14)+dVdtheta(14)/2]);
+        drawnow;    
     end
     % Finite Differences Calc
     dx7 = [];
@@ -217,12 +221,12 @@ function video_example(leg_params,vertex_guess_coords,theta)
     end
 
     figure();
-    p_theta = linspace(0,(2*pi),100);
+    p_theta = linspace(0,(2*pi),thetanum);
     %Plot dxtip/dtheta
     subplot(2,1,1);
     plot(p_theta(1:length(p_theta)-1),dx7)
     hold on;
-    plot(p_theta(1:length(p_theta)),dv_x7)
+    plot(p_theta(1:length(p_theta)),dv_x7,'--')
     title('dxtip/dtheta Comparison')
     legend('Finite Differences', 'Linear Algebra')
     xlabel('Theta')
@@ -234,14 +238,13 @@ function video_example(leg_params,vertex_guess_coords,theta)
     subplot(2,1,2);
     plot(p_theta(1:length(p_theta)-1),dy7)
     hold on;
-    plot(p_theta(1:length(p_theta)),dv_y7)
+    plot(p_theta(1:length(p_theta)),dv_y7,'--')
     title('dytip/dtheta Comparison')
     legend('Finite Differences', 'Linear Algebra')
     xlabel('Theta')
     ylabel('dytip')
     axis([0 (2*pi) -50 50])
     hold off;
-    
 end
 
 %theta: the current angle of the crank
