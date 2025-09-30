@@ -174,7 +174,6 @@ end
 function video_example(leg_params,vertex_guess_coords,theta)
     leg_drawing = initialize_leg_drawing(leg_params);
     hold off;
-    legend('hide')
    
     % variables needed for Finite Diff and Linear Algebra velocity calc
     x7 = [];
