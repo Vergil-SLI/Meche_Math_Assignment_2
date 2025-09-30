@@ -60,10 +60,9 @@ function strandbeest()
     end
 
     theta = linspace(0,(6*pi),100);
-    [vertex_coords_root, ~] = compute_coords(guess, leg_params, theta(1));
 
     video_example(leg_params,guess,theta);
-    dVdtheta = compute_velocities(vertex_coords_root, leg_params, pi/4);
+    % dVdtheta = compute_velocities(vertex_coords_root, leg_params, pi/4)
 end
 
 
@@ -175,8 +174,11 @@ function video_example(leg_params,vertex_guess_coords,theta)
     % variables needed for Finite Diff and Linear Algebra velocity calc
     x7 = [];
     y7 = [];
-    big_dVdtheta = [];
-
+    dv_x7 = [];
+    dv_y7 = [];
+    
+    hold off;
+    legend('hide')
     %iterate through theta
     for theta_iter = 1:length(theta)     
         % calculate vertex coords for current theta and plot it 
@@ -191,38 +193,42 @@ function video_example(leg_params,vertex_guess_coords,theta)
         
         % Linear Algebra data collection
         dVdtheta = compute_velocities(vertex_coords_root, leg_params, theta(theta_iter));
-        big_dVdtheta = [big_dVdtheta; dVdtheta];
+        dv_x7 = [dv_x7; dVdtheta(13)];
+        dv_y7 = [dv_y7; dVdtheta(14)];
     end
+    
+    
 
-    big_dVdtheta
-
-% Finite Differences Calc
+    % Finite Differences Calc
     dx7 = [];
     dy7 = [];
 
     for i = 1:length(x7)-1
-        dx = x7(i+1)-x7(i);
-        dy = y7(i+1)-y7(i);
+        dx_dtheta = (x7(i+1)-x7(i)) / (theta(i+1)-theta(i));
+        dy_dtheta = (y7(i+1)-y7(i)) / (theta(i+1)-theta(i));
 
-        dx7 = [dx7; dx];
-        dy7 = [dy7; dy];
+        dx7 = [dx7; dx_dtheta];
+        dy7 = [dy7; dy_dtheta];
     end
-    hold off;
+
+    dv_y7 = dv_y7
+    dy7 = dy7
+
+    figure();
     plot(theta(1:length(theta)-1),dx7)
     hold on;
     plot(theta(1:length(theta)-1),dy7)
-    legend('x points finite','y points finite')
-    title('dx/dtheta comparison')
+    title('d/dtheta comparison')
  
+    % Plot Linear Algebra 
+    plot(theta(1:length(theta)),dv_x7)
+    plot(theta(1:length(theta)),dv_y7)
+    legend('x points finite','y points finite', 'x points lin alg', 'y points lin alg')
+    hold off
+    
 end
 
-%Computes the theta derivatives of each vertex coordinate for the Jansen linkage
-%INPUTS:
-%vertex_coords: a column vector containing the (x,y) coordinates of every vertex
-% these are assumed to be legal values that are roots of the error funcs!
-%leg_params: a struct containing the parameters that describe the linkage
 %theta: the current angle of the crank
-%OUTPUTS:
 %dVdtheta: a column vector containing the theta derivates of each vertex coord
 function dVdtheta = compute_velocities(vertex_coords, leg_params, theta)
     wrapper = @(v) link_length_error(v,leg_params);
@@ -233,8 +239,8 @@ function dVdtheta = compute_velocities(vertex_coords, leg_params, theta)
     B = zeros(14,1);
     B(1,:) = leg_params.crank_length * -sin(theta);
     B(2,:) = leg_params.crank_length * cos(theta);
-
-    dVdtheta = B\M;
+    
+    dVdtheta = M\B;
 end
 
 function J = approximate_jacobian(fun,x)
