@@ -201,6 +201,7 @@ function video_example(leg_params,vertex_guess_coords,theta)
         drawnow;
         hold on;
         plot(x7,y7,'g');
+        plot([vertex_coords_root(13), vertex_coords_root(13)+dVdtheta(13)],[vertex_coords_root(14),vertex_coords_root(14)+dVdtheta(14)],'r')
         hold off;  
     end
     % Finite Differences Calc
