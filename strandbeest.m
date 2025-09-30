@@ -140,7 +140,7 @@ end
 
 
 %Plots leg given coordinates yay
-function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
+function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params,theta,vertex_coords_root)
     axis equal
     axis([-150 20 -120 50])
 
@@ -166,28 +166,28 @@ function update_leg_drawing(complete_vertex_coords, leg_drawing, leg_params)
     crank_x = [leg_params.vertex_pos0(1,:), complete_vertex_coords(1)]; 
     crank_y = [leg_params.vertex_pos0(2,:), complete_vertex_coords(2)];
     set(leg_drawing.crank,'xdata',crank_x,'ydata',crank_y);
+   
 end
 
 
 %Making the video
 function video_example(leg_params,vertex_guess_coords,theta)
     leg_drawing = initialize_leg_drawing(leg_params);
-    
+    hold off;
+    legend('hide')
+   
     % variables needed for Finite Diff and Linear Algebra velocity calc
     x7 = [];
     y7 = [];
     dv_x7 = [];
     dv_y7 = [];
     
-    hold off;
-    legend('hide')
-    %iterate through theta
+    %iterate through theta 
     for theta_iter = 1:length(theta)     
         % calculate vertex coords for current theta and plot it 
         [vertex_coords_root, ~] = compute_coords(vertex_guess_coords, leg_params, theta(theta_iter));
         vertex_guess_coords = vertex_coords_root;
-        update_leg_drawing(vertex_coords_root, leg_drawing, leg_params)
-        drawnow;
+
 
         % Finite diff data collection
         x7 = [x7; vertex_coords_root(13)];
@@ -197,10 +197,13 @@ function video_example(leg_params,vertex_guess_coords,theta)
         dVdtheta = compute_velocities(vertex_coords_root, leg_params, theta(theta_iter));
         dv_x7 = [dv_x7; dVdtheta(13)];
         dv_y7 = [dv_y7; dVdtheta(14)];
-    end
-    
-    
 
+        update_leg_drawing(vertex_coords_root, leg_drawing, leg_params,theta,vertex_coords_root)
+        drawnow;
+        hold on;
+        plot(x7,y7,'g');
+        hold off;  
+    end
     % Finite Differences Calc
     dx7 = [];
     dy7 = [];
@@ -244,26 +247,26 @@ end
 %theta: the current angle of the crank
 %dVdtheta: a column vector containing the theta derivates of each vertex coord
 function dVdtheta = compute_velocities(vertex_coords, leg_params, theta)
-    wrapper = @(v) link_length_error(v,leg_params);
-    Jacob_error_func = approximate_jacobian(wrapper,vertex_coords);
-    
-    add = eye(4,14);
-    M = [add; Jacob_error_func];
-    B = zeros(14,1);
-    B(1,:) = leg_params.crank_length * -sin(theta);
-    B(2,:) = leg_params.crank_length * cos(theta);
-    
-    dVdtheta = M\B;
-end
-
-function J = approximate_jacobian(fun,x)
-    J = [];
-    h = 1e-6;
-
-    for j = 1:length(x)
-        basis_j = zeros(length(x), 1);
-        basis_j(j) = 1;
-        column = (fun(x + h*basis_j) - fun(x - h*basis_j)) / (2*h);
-        J = [J, column];
+        wrapper = @(v) link_length_error(v,leg_params);
+        Jacob_error_func = approximate_jacobian(wrapper,vertex_coords);
+        
+        add = eye(4,14);
+        M = [add; Jacob_error_func];
+        B = zeros(14,1);
+        B(1,:) = leg_params.crank_length * -sin(theta);
+        B(2,:) = leg_params.crank_length * cos(theta);
+        
+        dVdtheta = M\B;
     end
-end
+    
+    function J = approximate_jacobian(fun,x)
+        J = [];
+        h = 1e-6;
+    
+        for j = 1:length(x)
+            basis_j = zeros(length(x), 1);
+            basis_j(j) = 1;
+            column = (fun(x + h*basis_j) - fun(x - h*basis_j)) / (2*h);
+            J = [J, column];
+        end
+    end
