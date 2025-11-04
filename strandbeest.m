@@ -1,6 +1,7 @@
 function strandbeest()
     %clearing bc our stuff keeps breaking:
     clear;
+
     %Set Parameters
     %initialize leg_params structure
     leg_params = struct();
@@ -10,23 +11,24 @@ function strandbeest()
     leg_params.num_linkages = 10;
     %length of crank shaft
     leg_params.crank_length = 15.0;
-    %fixed position coords of vertex 0
+    %fixed position coords of vertex 0 aka center of rotation of the crank
     leg_params.vertex_pos0 = [0;0];
-    %fixed position coords of vertex 2 ***********************
+    %fixed position coords of vertex 2 aka center of rotation of the 1
+    %stationary vertex of the strandbeest leg
     leg_params.vertex_pos2 = [-38.0;-7.8];
     
     %matrix relating links to vertices
     leg_params.link_to_vertex_list = ...
-           [1, 3;... %link 1 adjacency
-            3, 4;... %link 2 adjacency
-            2, 3;... %link 3 adjacency
-            2, 4;... %link 4 adjacency
-            4, 5;... %link 5 adjacency
-            2, 6;... %link 6 adjacency
-            1, 6;... %link 7 adjacency
-            5, 6;... %link 8 adjacency
-            5, 7;... %link 9 adjacency
-            6, 7]; %link 10 adjacency
+           [1, 3;... %the 2 vertices link 1 connect
+            3, 4;... %the 2 vertices link 2 connect
+            2, 3;... %the 2 vertices link 3 connect
+            2, 4;... %the 2 vertices link 4 connect
+            4, 5;... %the 2 vertices link 5 connect
+            2, 6;... %the 2 vertices link 6 connect
+            1, 6;... %the 2 vertices link 7 connect
+            5, 6;... %the 2 vertices link 8 connect
+            5, 7;... %the 2 vertices link 9 connect
+            6, 7]; %the 2 vertices link 10 connect
             
     leg_params.link_lengths = ...
            [50.0,... %link 1 length
@@ -41,16 +43,16 @@ function strandbeest()
             49.0]; %link 10 length
     
     vertex_guess_coords = [...
-    [ 0; 50];... %vertex 1 guess
-    [ -50; 0];... %vertex 2 guess
-    [ -50; 50];... %vertex 3 guess
-    [-100; 0];... %vertex 4 guess
-    [-100; -50];... %vertex 5 guess
-    [ -50; -50];... %vertex 6 guess
-    [ -50; -100]... %vertex 7 guess
+    [ 0; 50];... %vertex 1 [x,y] guess
+    [ -50; 0];... %vertex 2 [x,y] guess
+    [ -50; 50];... %vertex 3 [x,y] guess
+    [-100; 0];... %vertex 4 [x,y] guess
+    [-100; -50];... %vertex 5 [x,y] guess
+    [ -50; -50];... %vertex 6 [x,y] guess
+    [ -50; -100]... %vertex 7 [x,y] guess
     ];
     
-    % concatenate initial guesses into a vertical column
+    % concatenate vertex_guess_coords into a vertical column
     [numRows, numCols] = size(vertex_guess_coords);
     guess = zeros(numRows*numCols, 1);
     tracker = 1;
@@ -61,11 +63,11 @@ function strandbeest()
         end
     end
     
-    thetanum = 400;
-    theta = linspace(0,(6*pi),thetanum);
+    thetanum = 400; % higher number = smoother animation but longer time
+    crank_final_angle = 12*pi; % how many rotation the animation does
+    theta = linspace(0,crank_final_angle,thetanum);
 
     video_example(leg_params,guess,theta,thetanum);
-    % dVdtheta = compute_velocities(vertex_coords_root, leg_params, pi/4)
 end
 
 
